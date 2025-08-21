@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="jp">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+    <h1>M5 Print</h1>
+    <button id="print-btn" onclick="printText()">print</button>
+</body>
+
+<script>
+    async function connectToPrinter() {
+        try {
+            const device = await navigator.bluetooth.requestDevice({
+                filters: [{ services: ['M5_Printer'] }],
+                optionalServices: ['b07d80ae-4bd6-90ce-1567-54cfb8a52027']
+            });
+
+            const server = await device.gatt.connect();
+            const service = await server.getPrimaryService('b07d80ae-4bd6-90ce-1567-54cfb8a52027');
+            const characteristic = await service.getCharacteristic('8872a9b1-d9c7-1f6f-9eaf-6f765d69ee5e');
+
+            return characteristic;
+        } catch (error) {
+            alert('Bluetooth connection failed: ' + error.message);
+        }
+    }
+
+    async function sendText(characteristic) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode('Hello, M5 Printer!');
+        await characteristic.writeValue(data);
+    }
+
+    async function printText() {
+        const characteristic = await connectToPrinter();
+        if (characteristic) {
+            await sendText(characteristic);
+        }
+    }
+</script>
+
+</html>
