@@ -12,6 +12,8 @@
 </body>
 
 <script>
+    let characteristic = null;
+
     async function connectToPrinter() {
         try {
             const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['b07d80ae-4bd6-90ce-1567-54cfb8a52027'] });
@@ -33,7 +35,10 @@
     }
 
     async function printText() {
-        const characteristic = await connectToPrinter();
+        if (!characteristic) {
+            characteristic = await connectToPrinter();
+        }
+
         if (characteristic) {
             await sendText(characteristic);
         }
