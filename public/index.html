@@ -14,10 +14,7 @@
 <script>
     async function connectToPrinter() {
         try {
-            const device = await navigator.bluetooth.requestDevice({
-                filters: [{ services: ['m5printer'] }],
-                optionalServices: ['b07d80ae-4bd6-90ce-1567-54cfb8a52027']
-            });
+            const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true });
 
             const server = await device.gatt.connect();
             const service = await server.getPrimaryService('b07d80ae-4bd6-90ce-1567-54cfb8a52027');
