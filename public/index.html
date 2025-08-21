@@ -15,7 +15,7 @@
     async function connectToPrinter() {
         try {
             const device = await navigator.bluetooth.requestDevice({
-                filters: [{ services: ['M5_Printer'] }],
+                filters: [{ services: ['m5printer'] }],
                 optionalServices: ['b07d80ae-4bd6-90ce-1567-54cfb8a52027']
             });
 
