@@ -8,41 +8,73 @@
 
 <body>
     <h1>M5 Print</h1>
-    <button id="print-btn" onclick="printText()">print</button>
+    <div style="display: flex; flex-direction: column; align-items: center;">
+        <input type="file" id="imageInput" accept="image/*" onchange="readImageFile(event)"
+            style="padding-bottom: 16px;">
+        <img id="resizedImg" style="padding-bottom: 16px;">
+    </div>
+    <script>
+        const resizedImg = document.getElementById("resizedImg");
+        const maxSize = 100;
+
+        let width = 0;
+        let height = 0;
+
+        // 画像を読み込む
+        function readImageFile(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                console.error("No file selected.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = new Image();
+                img.onload = function () {
+                    width = img.width;
+                    height = img.height;
+
+                    // 読み込みが完了したら縮小して画面に表示
+                    resizedImg.src = resizeImage(img).src;
+                };
+                img.src = e.target.result;
+            };
+            reader.onerror = function () {
+                console.error("Error reading file:", reader.error);
+            };
+            reader.readAsDataURL(file);
+
+            console.log("Selected file:", file);
+        }
+
+        // アスペクト比を維持しながら画像を縮小して返す
+        function resizeImage(img, maxWidth, maxHeight) {
+            let resizedImgWidth = img.width;
+            let resizedImgHeight = img.height;
+            if (img.width > img.height) {
+                const ratio = img.height / img.width;
+                resizedImgWidth = maxSize;
+                resizedImgHeight = maxSize * ratio;
+            } else {
+                const ratio = img.width / img.height;
+                resizedImgHeight = maxSize;
+                resizedImgWidth = maxSize * ratio;
+            }
+
+            const canvas = document.createElement("canvas");
+            canvas.width = resizedImgWidth;
+            canvas.height = resizedImgHeight;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, resizedImgWidth, resizedImgHeight);
+            const base64 = canvas.toDataURL(img);
+
+            const resizedImg = new Image();
+            resizedImg.src = base64;
+
+            return resizedImg;
+        }
+    </script>
 </body>
-
-<script>
-    let characteristic = null;
-
-    async function connectToPrinter() {
-        try {
-            const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['b07d80ae-4bd6-90ce-1567-54cfb8a52027'] });
-
-            const server = await device.gatt.connect();
-            const service = await server.getPrimaryService('b07d80ae-4bd6-90ce-1567-54cfb8a52027');
-            const characteristic = await service.getCharacteristic('8872a9b1-d9c7-1f6f-9eaf-6f765d69ee5e');
-
-            return characteristic;
-        } catch (error) {
-            alert('Bluetooth connection failed: ' + error.message);
-        }
-    }
-
-    async function sendText(characteristic) {
-        const encoder = new TextEncoder();
-        const data = encoder.encode('Hello, M5 Printer!');
-        await characteristic.writeValue(data);
-    }
-
-    async function printText() {
-        if (!characteristic) {
-            characteristic = await connectToPrinter();
-        }
-
-        if (characteristic) {
-            await sendText(characteristic);
-        }
-    }
-</script>
 
 </html>
