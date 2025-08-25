@@ -12,6 +12,7 @@
         <input type="file" id="imageInput" accept="image/*" onchange="readImageFile(event)"
             style="padding-bottom: 16px;">
         <img id="previewImg" style="padding-bottom: 16px;">
+        <input type="range" min="0" max="255" value="128" id="thresholdRange" oninput="updateThreshold(event)">
     </div>
     <script>
         const previewImg = document.getElementById("previewImg");
@@ -19,6 +20,18 @@
 
         let width = 0;
         let height = 0;
+
+        let threshold = 128;
+
+        function updateThreshold(event) {
+            threshold = event.target.value;
+
+            // 画像を再処理
+            const img = document.getElementById("imageInput").files[0];
+            if (img) {
+                readImageFile({ target: { files: [img] } });
+            }
+        }
 
         // 画像を読み込む
         function readImageFile(event) {
@@ -39,8 +52,10 @@
                     const resizedImg = await resizeImage(img);
                     // グレースケール変換
                     const grayImg = await convertToGrayscale(resizedImg);
+                    // 2値化
+                    const binaryImg = await convertToBinary(grayImg, threshold);
 
-                    previewImg.src = grayImg.src;
+                    previewImg.src = binaryImg.src;
                 };
                 img.src = e.target.result;
             };
@@ -99,6 +114,31 @@
             const grayImg = new Image();
             grayImg.src = base64;
             return grayImg;
+        }
+
+        // 画像を2値化して返す
+        function convertToBinary(img, threshold) {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                const binaryValue = avg >= threshold ? 255 : 0;
+                data[i] = binaryValue;     // r
+                data[i + 1] = binaryValue; // g
+                data[i + 2] = binaryValue; // b
+            }
+            ctx.putImageData(imageData, 0, 0);
+
+            const base64 = canvas.toDataURL(img);
+            const binaryImg = new Image();
+            binaryImg.src = base64;
+            return binaryImg;
         }
     </script>
 </body>
